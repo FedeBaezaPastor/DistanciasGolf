@@ -1,0 +1,51 @@
+Club de Golf Costa de Azahar
+9 greens físicos compartidos por los recorridos Rojo y Verde.
+
+# Fuente: geometrías golf=green y golf=hole de OpenStreetMap, consultadas el 15-10-2026.
+# Centro: centroide del polígono del green.
+# Entrada y fondo: extremos del polígono proyectados según la dirección de juego.
+
+Hoyo 1:
+Entrada: 39.9883189, 0.0226358
+Centro: 39.9881497, 0.0225780
+Fondo: 39.9880179, 0.0225178
+
+Hoyo 2:
+Entrada: 39.9851885, 0.0208166
+Centro: 39.9850852, 0.0207847
+Fondo: 39.9849840, 0.0207415
+
+Hoyo 3:
+Entrada: 39.9839875, 0.0189827
+Centro: 39.9840682, 0.0189319
+Fondo: 39.9841671, 0.0189146
+
+Hoyo 4:
+Entrada: 39.9870792, 0.0204958
+Centro: 39.9871417, 0.0206114
+Fondo: 39.9872087, 0.0206963
+
+Hoyo 5:
+Entrada: 39.9901053, 0.0227029
+Centro: 39.9902344, 0.0227633
+Fondo: 39.9903560, 0.0227840
+
+Hoyo 6:
+Entrada: 39.9882298, 0.0207429
+Centro: 39.9881428, 0.0206190
+Fondo: 39.9880703, 0.0204830
+
+Hoyo 7:
+Entrada: 39.9887813, 0.0205497
+Centro: 39.9888645, 0.0206000
+Fondo: 39.9889473, 0.0206014
+
+Hoyo 8:
+Entrada: 39.9913742, 0.0229436
+Centro: 39.9914523, 0.0230896
+Fondo: 39.9915129, 0.0231998
+
+Hoyo 9:
+Entrada: 39.9914859, 0.0235595
+Centro: 39.9914705, 0.0237273
+Fondo: 39.9914091, 0.0238056

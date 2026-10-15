@@ -1,5 +1,5 @@
-const CACHE = "distancias-golf-v1";
-const FILES = ["./", "./index.html", "./styles.css", "./data.js", "./app.js", "./manifest.webmanifest", "./icons/icon.svg"];
+const CACHE = "distancias-golf-v2";
+const FILES = ["./", "./index.html", "./styles.css", "./theme.css", "./data.js", "./app.js", "./manifest.webmanifest", "./icons/icon.svg"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", event => {

@@ -1,7 +1,7 @@
 {
   "name": "Distancias Golf",
   "short_name": "Golf GPS",
-  "description": "Distancias GPS a tees y greens.",
+  "description": "Distancias GPS a entrada, centro y fondo de cada green.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

@@ -8,6 +8,21 @@ const targetLabels = {
   tees: ["Tee 1", "Tee 2", "Tee 3", "Tee 4"]
 };
 
+const systemTheme = matchMedia("(prefers-color-scheme: dark)");
+
+function applyTheme(theme, persist = false) {
+  document.documentElement.dataset.theme = theme;
+  $("#themeColor").content = theme === "dark" ? "#0d1815" : "#f3f1e9";
+  $("#themeBtn").textContent = theme === "dark" ? "☀" : "☾";
+  $("#themeBtn").setAttribute("aria-label", theme === "dark" ? "Activar modo claro" : "Activar modo oscuro");
+  $("#themeBtn").setAttribute("aria-pressed", String(theme === "dark"));
+  if (persist) localStorage.setItem("theme", theme);
+}
+
+function toggleTheme() {
+  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true);
+}
+
 function showScreen(id) {
   screens.forEach(name => $("#" + name).classList.toggle("active", name === id));
   $("#backBtn").hidden = id === "clubScreen";
@@ -139,6 +154,11 @@ $("#holeSelect").onchange = event => changeHole(Number(event.target.value));
 $("#locationBtn").onclick = startGps;
 $("#mapBtn").onclick = openMap;
 $("#backBtn").onclick = goBack;
+$("#themeBtn").onclick = toggleTheme;
+applyTheme(document.documentElement.dataset.theme || (systemTheme.matches ? "dark" : "light"));
+systemTheme.addEventListener("change", event => {
+  if (!localStorage.getItem("theme")) applyTheme(event.matches ? "dark" : "light");
+});
 
 window.addEventListener("beforeinstallprompt", event => {
   event.preventDefault();

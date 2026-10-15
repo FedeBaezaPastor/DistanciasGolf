@@ -3,11 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#163d34">
-  <meta name="description" content="Consulta con GPS la distancia a tees y greens.">
+  <meta name="theme-color" id="themeColor" content="#f3f1e9">
+  <meta name="description" content="Consulta con GPS la distancia a entrada, centro y fondo de cada green.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <script>
+    (() => {
+      const saved = localStorage.getItem("theme");
+      const theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.theme = theme;
+      document.querySelector("#themeColor").content = theme === "dark" ? "#0d1815" : "#f3f1e9";
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="theme.css">
   <title>Distancias Golf</title>
 </head>
 <body>
@@ -15,7 +24,10 @@
     <header class="topbar">
       <button class="icon-button back" id="backBtn" type="button" aria-label="Volver" hidden>←</button>
       <div class="brand"><span class="flag">⚑</span><div><strong>Distancias Golf</strong><small>GPS de campo</small></div></div>
-      <button class="icon-button" id="installBtn" type="button" aria-label="Instalar aplicación" hidden>↓</button>
+      <div class="top-actions">
+        <button class="icon-button" id="themeBtn" type="button" aria-label="Activar modo oscuro" title="Cambiar tema">☾</button>
+        <button class="icon-button" id="installBtn" type="button" aria-label="Instalar aplicación" hidden>↓</button>
+      </div>
     </header>
 
     <section class="screen active" id="clubScreen">
@@ -57,7 +69,7 @@
         <button class="primary" id="locationBtn" type="button">Activar GPS</button>
         <button class="secondary" id="mapBtn" type="button">Abrir en Google Maps ↗</button>
       </div>
-      <p class="offline-note">Las distancias funcionan sin conexión una vez instalada la aplicación. El mapa necesita Internet.</p>
+      <p class="offline-note">Las distancias funcionan sin conexión una vez instalada la aplicación. El mapa necesita Internet.<br><span>Datos de Costa de Azahar: © OpenStreetMap contributors.</span></p>
     </section>
   </main>
 
