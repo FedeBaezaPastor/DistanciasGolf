@@ -1,0 +1,10 @@
+caddy.arinsaldev.com {
+    encode zstd gzip
+    root * /var/www/distancias-golf/site
+
+    @serviceWorker path /sw.js
+    header @serviceWorker Cache-Control "no-cache, no-store, must-revalidate"
+
+    try_files {path} {path}/ /index.html
+    file_server
+}
