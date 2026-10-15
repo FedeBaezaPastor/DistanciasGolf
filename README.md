@@ -11,7 +11,11 @@ Incluye:
 
 La aplicación estática se encuentra en `site/`.
 
-## Publicación con Caddy
+## Publicación
 
-El archivo `deploy/Caddyfile` sirve la PWA en `caddy.arinsaldev.com`.
+La instancia actual se sirve en `caddy.arinsaldev.com` mediante el proxy HTTPS
+del servidor y el contenedor Nginx definido en `deploy/default.conf`.
+
+También se incluye un `deploy/Caddyfile` por si se migra a Caddy directamente.
+
 
