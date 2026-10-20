@@ -1,4 +1,4 @@
-const CACHE = "distancias-golf-v3";
+const CACHE = "distancias-golf-v4";
 const FILES = ["./", "./index.html", "./styles.css", "./theme.css", "./data.js", "./app.js", "./manifest.webmanifest", "./icons/icon.svg"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
@@ -9,4 +9,12 @@ self.addEventListener("fetch", event => {
     caches.open(CACHE).then(cache => cache.put(event.request, copy));
     return response;
   }).catch(() => caches.match("./index.html"))));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(windows => {
+    const openWindow = windows.find(client => "focus" in client);
+    return openWindow ? openWindow.focus() : clients.openWindow(event.notification.data?.url || "./");
+  }));
 });

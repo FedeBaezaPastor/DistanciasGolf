@@ -146,6 +146,52 @@ function finishShot() {
   state.shotFinished = true;
   renderShot();
   showToast(`Golpe medido: ${state.shotDistance} m`);
+  if ("Notification" in window && Notification.permission === "granted") {
+    showWatchNotification("Golpe finalizado", `${state.shotDistance} metros`, false);
+  }
+}
+
+async function showWatchNotification(title, body, requestPermission = true) {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    showToast("Este navegador no admite notificaciones");
+    return false;
+  }
+
+  let permission = Notification.permission;
+  if (permission === "default" && requestPermission) permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    showToast(permission === "denied" ? "Activa las notificaciones en los ajustes" : "No se han activado las notificaciones");
+    return false;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification(title, {
+      body,
+      icon: "./icons/icon.svg",
+      tag: "distancias-golf-reloj",
+      renotify: true,
+      data: { url: "./" }
+    });
+    return true;
+  } catch {
+    showToast("No se ha podido enviar la notificación");
+    return false;
+  }
+}
+
+async function sendDistancesToWatch() {
+  if (!state.course || !state.position) {
+    showToast("Activa el GPS antes de enviar las distancias");
+    startGps();
+    return;
+  }
+  const points = state.course.holes[state.hole];
+  const labels = targetLabels[state.course.targetType];
+  const distances = points.map(point => Math.round(haversine(state.position, point)));
+  const body = distances.map((distance, index) => `${labels[index]} ${distance} m`).join(" · ");
+  const sent = await showWatchNotification(`Hoyo ${state.hole + 1} · ${state.course.name}`, body);
+  if (sent) showToast("Distancias enviadas al reloj");
 }
 
 function changeHole(next) {
@@ -211,6 +257,7 @@ $("#holeSelect").onchange = event => changeHole(Number(event.target.value));
 $("#locationBtn").onclick = startGps;
 $("#shotStartBtn").onclick = startShot;
 $("#shotEndBtn").onclick = finishShot;
+$("#watchBtn").onclick = sendDistancesToWatch;
 $("#mapBtn").onclick = openMap;
 $("#backBtn").onclick = goBack;
 $("#themeBtn").onclick = toggleTheme;
