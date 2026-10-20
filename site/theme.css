@@ -66,3 +66,10 @@ html[data-theme="dark"] .green-mark { background: #235844; border-color: #8fc19d
 
 html[data-theme="dark"] .shot-state.measuring { background: #1c3b30; color: #9dd8b7; }
 html[data-theme="dark"] .shot-state.finished { background: #40381d; color: #f3d777; }
+
+#watchBtn.watch-active {
+  border-color: #4d9b72;
+  background: #e7f3ea;
+  color: #276a4e;
+}
+html[data-theme="dark"] #watchBtn.watch-active { background: #1c3b30; color: #9dd8b7; }

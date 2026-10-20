@@ -1,7 +1,9 @@
 const $ = selector => document.querySelector(selector);
-const state = { club: null, course: null, hole: 0, position: null, positionTimestamp: null, accuracy: null, watchId: null, shotStart: null, shotDistance: null, shotFinished: false };
+const state = { club: null, course: null, hole: 0, position: null, positionTimestamp: null, accuracy: null, watchId: null, shotStart: null, shotDistance: null, shotFinished: false, watchMode: localStorage.getItem("watch-mode") === "true", lastWatchPosition: null, lastWatchSentAt: 0, watchSyncPending: false, wakeLock: null };
 let installPrompt = null;
 const MAX_MARK_ACCURACY = 15;
+const WATCH_MIN_INTERVAL = 15000;
+const WATCH_MIN_MOVEMENT = 10;
 
 const screens = ["clubScreen", "courseScreen", "distanceScreen"];
 const targetLabels = {
@@ -71,6 +73,7 @@ function selectCourse(id) {
   localStorage.setItem("last-selection", JSON.stringify({ club: state.club.id, course: state.course.id }));
   renderDistances();
   showScreen("distanceScreen");
+  if (state.watchMode && state.watchId === null) startGps();
 }
 
 function haversine(from, to) {
@@ -146,12 +149,12 @@ function finishShot() {
   state.shotFinished = true;
   renderShot();
   showToast(`Golpe medido: ${state.shotDistance} m`);
-  if ("Notification" in window && Notification.permission === "granted") {
-    showWatchNotification("Golpe finalizado", `${state.shotDistance} metros`, false);
+  if (state.watchMode && "Notification" in window && Notification.permission === "granted") {
+    showWatchNotification("Golpe finalizado", `${state.shotDistance} metros`, false, false);
   }
 }
 
-async function showWatchNotification(title, body, requestPermission = true) {
+async function showWatchNotification(title, body, requestPermission = true, silent = true) {
   if (!("Notification" in window) || !("serviceWorker" in navigator)) {
     showToast("Este navegador no admite notificaciones");
     return false;
@@ -170,7 +173,8 @@ async function showWatchNotification(title, body, requestPermission = true) {
       body,
       icon: "./icons/icon.svg",
       tag: "distancias-golf-reloj",
-      renotify: true,
+      renotify: !silent,
+      silent,
       data: { url: "./" }
     });
     return true;
@@ -180,18 +184,86 @@ async function showWatchNotification(title, body, requestPermission = true) {
   }
 }
 
-async function sendDistancesToWatch() {
+async function syncWatchDistances(force = false, silent = true) {
+  if (!state.watchMode || state.watchSyncPending || !state.course || !state.position) return false;
+  const now = Date.now();
+  const elapsed = now - state.lastWatchSentAt;
+  const movement = state.lastWatchPosition
+    ? haversine(state.position, [state.lastWatchPosition.latitude, state.lastWatchPosition.longitude])
+    : Infinity;
+  if (!force && (elapsed < WATCH_MIN_INTERVAL || movement < WATCH_MIN_MOVEMENT)) return false;
+
+  state.watchSyncPending = true;
+  try {
+    const points = state.course.holes[state.hole];
+    const distances = points.map(point => Math.round(haversine(state.position, point)));
+    const title = `H${state.hole + 1} · ${distances.join(" | ")} m`;
+    const body = `Entrada · Centro · Fondo · GPS ±${state.accuracy} m`;
+    const sent = await showWatchNotification(title, body, false, silent);
+    if (sent) {
+      state.lastWatchPosition = { ...state.position };
+      state.lastWatchSentAt = now;
+    }
+    return sent;
+  } finally {
+    state.watchSyncPending = false;
+  }
+}
+
+async function setWakeLock(enabled) {
+  if (!enabled) {
+    if (state.wakeLock) await state.wakeLock.release().catch(() => {});
+    state.wakeLock = null;
+    return;
+  }
+  if (!("wakeLock" in navigator) || document.visibilityState !== "visible" || state.wakeLock) return;
+  try {
+    state.wakeLock = await navigator.wakeLock.request("screen");
+    state.wakeLock.addEventListener("release", () => { state.wakeLock = null; });
+  } catch {}
+}
+
+function renderWatchMode() {
+  const button = $("#watchBtn");
+  button.textContent = state.watchMode ? "Modo reloj activo" : "Activar modo reloj";
+  button.classList.toggle("watch-active", state.watchMode);
+  button.setAttribute("aria-pressed", String(state.watchMode));
+}
+
+async function toggleWatchMode() {
+  if (state.watchMode) {
+    state.watchMode = false;
+    localStorage.setItem("watch-mode", "false");
+    await setWakeLock(false);
+    renderWatchMode();
+    showToast("Modo reloj desactivado");
+    return;
+  }
+
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    showToast("Este navegador no admite notificaciones");
+    return;
+  }
+  let permission = Notification.permission;
+  if (permission === "default") permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    showToast("Activa las notificaciones en los ajustes");
+    return;
+  }
+
+  state.watchMode = true;
+  localStorage.setItem("watch-mode", "true");
+  state.lastWatchPosition = null;
+  state.lastWatchSentAt = 0;
+  renderWatchMode();
+  await setWakeLock(true);
   if (!state.course || !state.position) {
-    showToast("Activa el GPS antes de enviar las distancias");
+    showToast("Modo reloj activo · esperando GPS");
     startGps();
     return;
   }
-  const points = state.course.holes[state.hole];
-  const labels = targetLabels[state.course.targetType];
-  const distances = points.map(point => Math.round(haversine(state.position, point)));
-  const body = distances.map((distance, index) => `${labels[index]} ${distance} m`).join(" · ");
-  const sent = await showWatchNotification(`Hoyo ${state.hole + 1} · ${state.course.name}`, body);
-  if (sent) showToast("Distancias enviadas al reloj");
+  const sent = await syncWatchDistances(true, false);
+  if (sent) showToast("Modo reloj activo");
 }
 
 function changeHole(next) {
@@ -199,6 +271,7 @@ function changeHole(next) {
   $("#holeSelect").value = state.hole;
   localStorage.setItem(`hole-${state.course.id}`, state.hole);
   renderDistances();
+  if (state.watchMode) syncWatchDistances(true, false);
 }
 
 function setGpsState(type, label) {
@@ -224,6 +297,7 @@ function startGps() {
     $("#accuracy").textContent = `Precisión aproximada: ±${accuracy} m · actualización ${new Date(position.timestamp).toLocaleTimeString("es-ES", {hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
     renderDistances();
     renderShot();
+    if (state.watchMode) syncWatchDistances(false, state.lastWatchSentAt !== 0);
   }, error => {
     const messages = { 1: "Permite el acceso a la ubicación para calcular distancias.", 2: "No se ha podido obtener tu posición.", 3: "El GPS está tardando demasiado. Inténtalo de nuevo." };
     setGpsState("error", "Sin ubicación");
@@ -257,7 +331,7 @@ $("#holeSelect").onchange = event => changeHole(Number(event.target.value));
 $("#locationBtn").onclick = startGps;
 $("#shotStartBtn").onclick = startShot;
 $("#shotEndBtn").onclick = finishShot;
-$("#watchBtn").onclick = sendDistancesToWatch;
+$("#watchBtn").onclick = toggleWatchMode;
 $("#mapBtn").onclick = openMap;
 $("#backBtn").onclick = goBack;
 $("#themeBtn").onclick = toggleTheme;
@@ -282,5 +356,9 @@ $("#installBtn").onclick = async () => {
 window.addEventListener("appinstalled", () => showToast("Aplicación instalada"));
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+document.addEventListener("visibilitychange", () => {
+  if (state.watchMode && document.visibilityState === "visible") setWakeLock(true);
+});
 renderClubs();
 renderShot();
+renderWatchMode();
