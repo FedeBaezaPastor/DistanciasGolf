@@ -64,6 +64,19 @@
         <div class="distance-grid" id="distanceList"></div>
       </section>
 
+      <section class="shot-card" aria-labelledby="shotTitle">
+        <div class="shot-heading">
+          <div><span class="eyebrow">MEDICIÓN PERSONAL</span><h2 id="shotTitle">Medir un golpe</h2></div>
+          <span class="shot-state" id="shotState">Sin iniciar</span>
+        </div>
+        <div class="shot-distance"><strong id="shotDistance">—</strong><span>metros</span></div>
+        <p id="shotHelp">Marca el punto desde el que golpeas la bola.</p>
+        <div class="shot-actions">
+          <button class="primary" id="shotStartBtn" type="button">Marcar inicio</button>
+          <button class="secondary" id="shotEndBtn" type="button" disabled>Marcar final</button>
+        </div>
+      </section>
+
       <div class="accuracy" id="accuracy">Activa la ubicación para calcular las distancias.</div>
       <div class="actions">
         <button class="primary" id="locationBtn" type="button">Activar GPS</button>

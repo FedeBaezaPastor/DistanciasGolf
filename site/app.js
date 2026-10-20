@@ -1,6 +1,7 @@
 const $ = selector => document.querySelector(selector);
-const state = { club: null, course: null, hole: 0, position: null, watchId: null };
+const state = { club: null, course: null, hole: 0, position: null, positionTimestamp: null, accuracy: null, watchId: null, shotStart: null, shotDistance: null, shotFinished: false };
 let installPrompt = null;
+const MAX_MARK_ACCURACY = 15;
 
 const screens = ["clubScreen", "courseScreen", "distanceScreen"];
 const targetLabels = {
@@ -94,6 +95,59 @@ function renderDistances() {
   $("#nextHole").disabled = state.hole === state.course.holes.length - 1;
 }
 
+function renderShot() {
+  const measuring = Boolean(state.shotStart) && !state.shotFinished;
+  const hasResult = state.shotFinished && state.shotDistance !== null;
+  const distance = measuring && state.position
+    ? Math.round(haversine(state.position, [state.shotStart.latitude, state.shotStart.longitude]))
+    : state.shotDistance;
+
+  $("#shotDistance").textContent = distance === null ? "—" : distance;
+  $("#shotState").textContent = measuring ? "Midiendo" : hasResult ? "Finalizado" : "Sin iniciar";
+  $("#shotState").className = `shot-state ${measuring ? "measuring" : hasResult ? "finished" : ""}`;
+  $("#shotHelp").textContent = measuring
+    ? "Camina hasta la bola y marca el punto final."
+    : hasResult
+      ? "Medición terminada. Puedes iniciar otro golpe."
+      : "Marca el punto desde el que golpeas la bola.";
+  $("#shotStartBtn").textContent = state.shotStart ? "Medir otro golpe" : "Marcar inicio";
+  $("#shotEndBtn").disabled = !measuring;
+}
+
+function canMarkShot() {
+  if (!state.position || state.accuracy === null) {
+    showToast("Activa el GPS y espera a obtener tu posición");
+    startGps();
+    return false;
+  }
+  if (Date.now() - state.positionTimestamp > 10000) {
+    showToast("Espera una posición GPS actualizada");
+    return false;
+  }
+  if (state.accuracy > MAX_MARK_ACCURACY) {
+    showToast(`Espera una precisión de ±${MAX_MARK_ACCURACY} m o mejor`);
+    return false;
+  }
+  return true;
+}
+
+function startShot() {
+  if (!canMarkShot()) return;
+  state.shotStart = { ...state.position };
+  state.shotDistance = 0;
+  state.shotFinished = false;
+  renderShot();
+  showToast("Inicio del golpe marcado");
+}
+
+function finishShot() {
+  if (!state.shotStart || !canMarkShot()) return;
+  state.shotDistance = Math.round(haversine(state.position, [state.shotStart.latitude, state.shotStart.longitude]));
+  state.shotFinished = true;
+  renderShot();
+  showToast(`Golpe medido: ${state.shotDistance} m`);
+}
+
 function changeHole(next) {
   state.hole = Math.max(0, Math.min(next, state.course.holes.length - 1));
   $("#holeSelect").value = state.hole;
@@ -117,10 +171,13 @@ function startGps() {
   $("#accuracy").textContent = "Esperando una posición precisa…";
   state.watchId = navigator.geolocation.watchPosition(position => {
     state.position = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+    state.positionTimestamp = position.timestamp;
     const accuracy = Math.round(position.coords.accuracy);
+    state.accuracy = accuracy;
     setGpsState("ready", "GPS activo");
     $("#accuracy").textContent = `Precisión aproximada: ±${accuracy} m · actualización ${new Date(position.timestamp).toLocaleTimeString("es-ES", {hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
     renderDistances();
+    renderShot();
   }, error => {
     const messages = { 1: "Permite el acceso a la ubicación para calcular distancias.", 2: "No se ha podido obtener tu posición.", 3: "El GPS está tardando demasiado. Inténtalo de nuevo." };
     setGpsState("error", "Sin ubicación");
@@ -152,6 +209,8 @@ $("#previousHole").onclick = () => changeHole(state.hole - 1);
 $("#nextHole").onclick = () => changeHole(state.hole + 1);
 $("#holeSelect").onchange = event => changeHole(Number(event.target.value));
 $("#locationBtn").onclick = startGps;
+$("#shotStartBtn").onclick = startShot;
+$("#shotEndBtn").onclick = finishShot;
 $("#mapBtn").onclick = openMap;
 $("#backBtn").onclick = goBack;
 $("#themeBtn").onclick = toggleTheme;
@@ -177,3 +236,4 @@ window.addEventListener("appinstalled", () => showToast("Aplicación instalada")
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
 renderClubs();
+renderShot();

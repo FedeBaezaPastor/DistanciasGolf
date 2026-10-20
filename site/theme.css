@@ -42,3 +42,27 @@ html[data-theme="dark"] .green-mark { background: #235844; border-color: #8fc19d
   .brand { gap: 8px; }
   .brand .flag { width: 40px; height: 40px; }
 }
+
+.shot-card {
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.shot-heading { display: flex; justify-content: space-between; align-items: start; gap: 15px; }
+.shot-heading h2 { margin: 5px 0 0; font: 700 27px Georgia, serif; }
+.shot-state { white-space: nowrap; padding: 7px 10px; border-radius: 99px; background: var(--paper); color: var(--muted); font-size: 11px; font-weight: 800; }
+.shot-state.measuring { background: #e7f3ea; color: #276a4e; }
+.shot-state.finished { background: #fff2c8; color: #6d571a; }
+.shot-distance { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 18px 0 4px; }
+.shot-distance strong { font: 700 58px Georgia, serif; }
+.shot-distance span { color: var(--muted); font-size: 14px; }
+.shot-card p { text-align: center; color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+.shot-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.shot-actions button { min-height: 52px; border-radius: 16px; font-size: 15px; font-weight: 800; }
+.shot-actions button:disabled { opacity: .45; cursor: not-allowed; }
+
+html[data-theme="dark"] .shot-state.measuring { background: #1c3b30; color: #9dd8b7; }
+html[data-theme="dark"] .shot-state.finished { background: #40381d; color: #f3d777; }
